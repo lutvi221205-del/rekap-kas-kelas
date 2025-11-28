@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Kas Kelas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .table { margin-top: 20px; }
+        .form-container { max-width: 600px; margin: auto; }
+        #adminSection, #loginForm { display: none; } /* Sembunyikan admin dan login secara default */
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- Halaman Utama (Rekap Kas) -->
+        <div id="rekapSection">
+            <h1 class="text-center">Rekap Data Kas Kelas</h1>
+            <p class="text-center">Total Saldo: <strong id="totalSaldo">Rp 0</strong></p>
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Keterangan</th>
+                        <th>Pemasukan</th>
+                        <th>Pengeluaran</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody id="rekapTable">
+                    <!-- Data akan dimuat dari localStorage -->
+                </tbody>
+            </table>
+            <div class="text-center mt-3">
+                <button onclick="showLogin()" class="btn btn-primary">Ke Halaman Admin</button>
+            </div>
+        </div>
+
+        <!-- Form Login Admin -->
+        <div id="loginForm" class="form-container mt-5">
+            <h3>Login Admin</h3>
+            <input type="password" id="password" class="form-control mb-2" placeholder="Masukkan Password">
+            <button onclick="login()" class="btn btn-success">Login</button>
+            <button onclick="hideLogin()" class="btn btn-secondary mt-2">Batal</button>
+        </div>
+
+        <!-- Halaman Admin -->
+        <div id="adminSection" class="mt-5">
+            <h1 class="text-center">Halaman Admin Kas Kelas</h1>
+            
+            <h3 class="mt-4">Tambah Transaksi</h3>
+            <form id="transaksiForm" class="form-container">
+                <div class="mb-3">
+                    <label for="tanggal" class="form-label">Tanggal</label>
+                    <input type="date" id="tanggal" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="keterangan" class="form-label">Keterangan</label>
+                    <input type="text" id="keterangan" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="pemasukan" class="form-label">Pemasukan (Rp)</label>
+                    <input type="number" id="pemasukan" class="form-control" value="0">
+                </div>
+                <div class="mb-3">
+                    <label for="pengeluaran" class="form-label">Pengeluaran (Rp)</label>
+                    <input type="number" id="pengeluaran" class="form-control" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary">Tambah</button>
+            </form>
+
+            <h3 class="mt-4">Daftar Transaksi</h3>
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Keterangan</th>
+                        <th>Pemasukan</th>
+                        <th>Pengeluaran</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTable">
+                    <!-- Data akan dimuat -->
+                </tbody>
+            </table>
+            <div class="text-center mt-3">
+                <button onclick="showRekap()" class="btn btn-secondary">Kembali ke Rekap</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const adminPassword = 'admin123'; // Password admin default
+
+        // Fungsi untuk memuat data rekap
+        function loadRekapData() {
+            const data = JSON.parse(localStorage.getItem('kasData')) || [];
+            const table = document.getElementById('rekapTable');
+            const totalSaldoEl = document.getElementById('totalSaldo');
+            let saldo = 0;
+            table.innerHTML = '';
+            data.forEach(item => {
+                saldo += item.pemasukan - item.pengeluaran;
+                table.innerHTML += `
+                    <tr>
+                        <td>${item.tanggal}</td>
+                        <td>${item.keterangan}</td>
+                        <td>Rp ${item.pemasukan.toLocaleString()}</td>
+                        <td>Rp ${item.pengeluaran.toLocaleString()}</td>
+                        <td>Rp ${saldo.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            totalSaldoEl.textContent = `Rp ${saldo.toLocaleString()}`;
+        }
+
+        // Fungsi untuk memuat data admin
+        function loadAdminData() {
+            const data = JSON.parse(localStorage.getItem('kasData')) || [];
+            const table = document.getElementById('adminTable');
+            table.innerHTML = '';
+            data.forEach((item, index) => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${item.tanggal}</td>
+                        <td>${item.keterangan}</td>
+                        <td>Rp ${item.pemasukan.toLocaleString()}</td>
+                        <td>Rp ${item.pengeluaran.toLocaleString()}</td>
+                        <td>
+                            <button onclick="deleteItem(${index})" class="btn btn-danger btn-sm">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Fungsi untuk menampilkan form login
+        function showLogin() {
+            document.getElementById('rekapSection').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+        }
+
+        // Fungsi untuk menyembunyikan form login
+        function hideLogin() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('rekapSection').style.display = 'block';
+        }
+
+        // Fungsi login
+        function login() {
+            const password = document.getElementById('password').value;
+            if (password === adminPassword) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminSection').style.display = 'block';
+                loadAdminData();
+            } else {
+                alert('Password salah!');
+            }
+        }
+
+        // Fungsi untuk kembali ke rekap
+        function showRekap() {
+            document.getElementById('adminSection').style.display = 'none';
+            document.getElementById('rekapSection').style.display = 'block';
+            loadRekapData(); // Refresh rekap setelah perubahan
+        }
+
+        // Tambah transaksi
+        document.getElementById('transaksiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = JSON.parse(localStorage.getItem('kasData')) || [];
+            const newItem = {
+                tanggal: document.getElementById('tanggal').value,
+                keterangan: document.getElementById('keterangan').value,
+                pemasukan: parseInt(document.getElementById('pemasukan').value) || 0,
+                pengeluaran: parseInt(document.getElementById('pengeluaran').value) || 0
+            };
+            data.push(newItem);
+            localStorage.setItem('kasData', JSON.stringify(data));
+            loadAdminData();
+            this.reset();
+        });
+
+        // Hapus item
+        function deleteItem(index) {
+            const data = JSON.parse(localStorage.getItem('kasData')) || [];
+            data.splice(index, 1);
+            localStorage.setItem('kasData', JSON.stringify(data));
+            loadAdminData();
+        }
+
+        // Muat data saat halaman dimuat
+        window.onload = loadRekapData;
+    </script>
+</body>
+</html>
